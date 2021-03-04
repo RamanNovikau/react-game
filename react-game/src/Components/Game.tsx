@@ -1,37 +1,46 @@
 import React from 'react';
 import { useEffect, useState, useCallback } from 'react';
-import { nanoid } from 'nanoid'
+import Button from '@material-ui/core/Button';
+import useDidMountEffect from './UseDidMountEffect';
+
+import PlayingCard from './PlayingCard';
+import Save from './Save';
 import Card from './Card';
 import Settings from './Settings';
-import CardsImages from '../assets/cards';
-import PlayingCard from './PlayingCard';
-import Button from '@material-ui/core/Button';
-import Save from './Save';
-import useDidMountEffect from './UseDidMountEffect';
 import GameScore from './GameScore';
+
+import CardsBacks from '../assets/card-backs';
+import CardsImages from '../assets/cards';
+import CardsImagesCartoon from '../assets/cards-cartoon';
+
+import { nanoid } from 'nanoid'
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
+import KeyboardEventHandler from 'react-keyboard-event-handler';
 import { Howl } from 'howler';
+import GameEnd from './GameEnd';
 
 
 export function shuffleArray(array: any[] | PlayingCard[]) {
     return array.sort(() => .5 - Math.random());
 }
 
-export function createCards(count: number) {
+export function createCards(count: number, back: string) {
 
-    const images = shuffleArray(CardsImages);
+    const images = shuffleArray(CardsImagesCartoon);
     const cards = [];
 
     for (let i = 0; i < count; i += 1) {
         cards.push({
             id: nanoid(),
-            img: `static/front/${images[i]}`,
+            img: `static/front-cartoon/${images[i]}`,
+            back: back,
             isFlipped: false,
             isVisible: true,
         });
         cards.push({
             id: nanoid(),
-            img: `static/front/${images[i]}`,
+            img: `static/front-cartoon/${images[i]}`,
+            back: back,
             isFlipped: false,
             isVisible: true,
         });
@@ -39,23 +48,40 @@ export function createCards(count: number) {
     return shuffleArray(cards) as PlayingCard[];
 }
 
+export function createCardBacks() {
+
+    const cardBacks = CardsBacks;
+
+    return cardBacks;
+}
+
 function createSave() {
     let save = {
         cardsCount: 8,
         soundEffectsVolume: 0.1,
         musicVolume: 0.1,
-        timer: 39,
+        timer: 90,
+        gameMode: 1,
         isHardGame: false,
         isTimeGame: false,
         wrongGuesses: 0,
         guessedPairs: 0,
-        cards: createCards(8),
+        attemts: 12,
+        cards: createCards(8, 'blue.png'),
         isGuess: true,
         isGameEnded: true,
         isActiveGame: false,
         firstCardGuess: null,
         secondCardGuess: null,
         startTimer: false,
+        gameSettings: {
+            cardsCount: 8,
+            musicVolume: 0.2,
+            effectsVolume: 0.2,
+            gameMode: 1,
+            timer: 90,
+            cardBack: 'blue.png',
+        }
     };
     const sData = localStorage.getItem('game-save');
     if (sData !== null) {
@@ -67,20 +93,34 @@ function createSave() {
 export default function Game() {
     const [save] = useState(createSave());
 
-    const [cardsCount, setCardsCount] = useState(save.cardsCount);
+    const [gameSettings, setGameSettings] = useState({
+        cardsCount: save.gameSettings.cardsCount,
+        musicVolume: save.gameSettings.musicVolume,
+        effectsVolume: save.gameSettings.effectsVolume,
+        gameMode: save.gameSettings.gameMode,
+        timer: save.gameSettings.timer,
+        cardBack: save.gameSettings.cardBack,
+    });
+
+    const [cardsCount] = useState(save.cardsCount);
     const [cards, setCards] = useState(save.cards);
 
-    const [soundEffectsVolume, setSoundEffectsVolume] = useState(save.soundEffectsVolume);
-    const [musicVolume, setMusicVolume] = useState(save.musicVolume);
+    const [cardBacks] = useState(createCardBacks());
+
+    const [soundEffectsVolume] = useState(save.soundEffectsVolume);
+    const [musicVolume] = useState(save.musicVolume);
+    const [muted, setMuted] = useState(false);
+    const [mutedEffects, setMutedEffects] = useState(false);
     const [timer, setTimer] = useState(save.timer);
 
     const [wrongGuesses, setWrongGuesses] = useState(save.wrongGuesses);
     const [guessedPairs, setGuessedPairs] = useState(save.guessedPairs);
+    const [attemts, setAttemts] = useState(save.attemts);
 
     const [isHardGame, setIsHardGame] = useState(save.isHardGame);
     const [isTimeGame, setIsTimeGame] = useState(save.isTimeGame);
 
-    const [gameMode, setGameMode] = useState(1);
+    const [gameMode] = useState(save.gameMode);
     const [isGuess, setIsGuess] = useState(save.isGuess);
     const [isGameEnded, setIsGameEnded] = useState(save.isGameEnded);
 
@@ -89,6 +129,12 @@ export default function Game() {
     const [firstCardGuess, setFirstCardGuess] = useState<PlayingCard | null>(save.firstCardGuess);
     const [secondCardGuess, setSecondCardGuess] = useState<PlayingCard | null>(save.secondCardGuess);
     const [startTimer, setStartTimer] = useState(save.startTimer);
+
+    const [open, setOpen] = useState(false);
+
+    const [openEnd, setOpenEnd] = useState(false);
+
+    const [winState, setWinState] = useState(false);
 
     const [gameMusic] = useState(new Howl({
         src: ['static/audio/puzzle-sound-loop.mp3'],
@@ -101,23 +147,75 @@ export default function Game() {
         volume: soundEffectsVolume,
     }));
 
-    const [open, setOpen] = useState(false);
+    const [wrongEffect] = useState(new Howl({
+        src: ['static/audio/wrong.wav'],
+        volume: musicVolume,
+    }));
+
+    const [correctEffect] = useState(new Howl({
+        src: ['static/audio/correct.mp3'],
+        volume: musicVolume,
+    }));
 
     useEffect(() => {
         const save = {
-            cardsCount, soundEffectsVolume, musicVolume, timer, isHardGame, isTimeGame, wrongGuesses, guessedPairs, cards, isGuess, firstCardGuess, secondCardGuess, startTimer,
+            cardsCount,
+            soundEffectsVolume,
+            musicVolume,
+            gameMode,
+            timer,
+            isHardGame,
+            isTimeGame,
+            wrongGuesses,
+            guessedPairs,
+            attemts,
+            cards,
+            isGuess,
+            firstCardGuess,
+            secondCardGuess,
+            startTimer,
+            gameSettings,
         }
         localStorage.setItem('game-save', JSON.stringify(save));
-    }, [cardsCount, soundEffectsVolume, musicVolume, timer, isHardGame, isTimeGame, wrongGuesses, guessedPairs, cards, isGuess, isGameEnded, isActiveGame, firstCardGuess, secondCardGuess, startTimer]);
-
-
+    }, [cardsCount,
+        soundEffectsVolume,
+        gameMode,
+        musicVolume,
+        timer,
+        isHardGame,
+        isTimeGame,
+        wrongGuesses,
+        guessedPairs,
+        attemts,
+        cards,
+        isGuess,
+        isGameEnded,
+        isActiveGame,
+        firstCardGuess,
+        secondCardGuess,
+        startTimer,
+        gameSettings,
+    ]);
 
     useEffect(() => {
-        soundEffects.volume(soundEffectsVolume);
-    }, [soundEffects, soundEffectsVolume]);
+        soundEffects.volume(gameSettings.effectsVolume);
+        wrongEffect.volume(gameSettings.effectsVolume);
+        correctEffect.volume(gameSettings.effectsVolume);
+    }, [soundEffects, gameSettings.effectsVolume, wrongEffect, correctEffect]);
+
     useEffect(() => {
-        gameMusic.volume(musicVolume);
-    }, [gameMusic, musicVolume]);
+        gameMusic.volume(gameSettings.musicVolume);
+    }, [gameMusic, gameSettings.musicVolume]);
+
+    useEffect(() => {
+        gameMusic.mute(muted);
+    }, [gameMusic, muted]);
+
+    useEffect(() => {
+        soundEffects.mute(mutedEffects);
+        correctEffect.mute(mutedEffects);
+        wrongEffect.mute(mutedEffects);
+    }, [correctEffect, mutedEffects, soundEffects, wrongEffect]);
 
 
     const onWrongGuess = useCallback(() => {
@@ -127,7 +225,9 @@ export default function Game() {
         setSecondCardGuess(null);
         setIsGuess(false);
         setWrongGuesses(wrongGuesses + 1);
-    }, [firstCardGuess, secondCardGuess, wrongGuesses]);
+        setAttemts(attemts - 1);
+        wrongEffect.play();
+    }, [attemts, firstCardGuess, secondCardGuess, wrongEffect, wrongGuesses]);
 
     const onCorrectGuess = useCallback(() => {
         setCardIsVisible(firstCardGuess!.id, false);
@@ -136,15 +236,50 @@ export default function Game() {
         setSecondCardGuess(null);
         setGuessedPairs((prev) => prev + 1);
         setIsGuess(false);
-    }, [firstCardGuess, secondCardGuess]);
+        correctEffect.play();
+    }, [correctEffect, firstCardGuess, secondCardGuess]);
 
     const newGame = useCallback(() => {
-        setCards(createCards(cardsCount));
+        if (!gameMusic.playing())
+            gameMusic.play();
+        setCards(createCards(gameSettings.cardsCount, gameSettings.cardBack));
         setIsGuess(true);
         setGuessedPairs(0);
         setWrongGuesses(0);
         setIsGameEnded(true);
-    }, [cardsCount]);
+        if (gameSettings.gameMode === 1) {
+            setIsTimeGame(false);
+            setIsHardGame(false);
+        }
+        if (gameSettings.gameMode === 2) {
+            setIsTimeGame(true);
+            setIsHardGame(false);
+        }
+        if (gameSettings.gameMode === 3) {
+            setIsTimeGame(false);
+            setIsHardGame(true);
+            setAttemts(gameSettings.cardsCount + 4);
+        }
+    }, [gameMusic, gameSettings.cardBack, gameSettings.cardsCount, gameSettings.gameMode]);
+
+    useEffect(() => {
+        if (guessedPairs === cards.length / 2) {
+            setWinState(true);
+            setStartTimer(false);
+            setOpenEnd(true);
+            newGame();
+        }
+        if (timer === 0 && startTimer) {
+            setStartTimer(false);
+            setOpenEnd(true);
+            newGame();
+        }
+        if (isHardGame && attemts === 0) {
+            setStartTimer(false);
+            setOpenEnd(true);
+            newGame();
+        }
+    }, [attemts, cards.length, guessedPairs, isHardGame, newGame, startTimer, timer]);
 
     useEffect(() => {
         if (!firstCardGuess || !secondCardGuess)
@@ -153,19 +288,12 @@ export default function Game() {
         (firstCardGuess.img === secondCardGuess.img) ? onCorrectGuess() : onWrongGuess();
     }, [firstCardGuess, onCorrectGuess, onWrongGuess, secondCardGuess]);
 
-    useEffect(() => {
-        if (guessedPairs === cards.length / 2) {
-            alert('YoU WIN!')
-            newGame();
-        }
-    }, [cards.length, guessedPairs, newGame])
+
 
     useDidMountEffect(() => {
         newGame();
         setStartTimer(false);
     }, [cardsCount])
-
-
 
     function setCardIsFlipped(cardID: string, isFlipped: boolean) {
         setCards(prev => prev.map(c => {
@@ -186,6 +314,7 @@ export default function Game() {
     useDidMountEffect(() => {
         if (isActiveGame) {
             newGame();
+            setStartTimer(false);
         }
     }, [isActiveGame]);
 
@@ -196,23 +325,27 @@ export default function Game() {
             setCards(prev => prev.map(c => {
                 return { ...c, isFlipped: true };
             }));
+            let revealTime = 3000;
+
+            if (isHardGame) {
+                revealTime = 1000;
+            }
+
             setTimeout(() => {
                 setCards(prev => prev.map(c => {
                     return { ...c, isFlipped: false };
                 }));
                 setIsGuess(false);
                 setIsGameEnded(false);
+                setWinState(false);
                 if (isTimeGame || isHardGame)
                     setStartTimer(true);
-            }, 2000);
+            }, revealTime);
         }
     }, [cards]);
 
     function onStartClick() {
         setIsActiveGame(true);
-        setStartTimer(false);
-
-        gameMusic.play();
     }
 
     function onCardClick(card: PlayingCard) {
@@ -231,34 +364,16 @@ export default function Game() {
     }
 
     useEffect(() => {
-        if (!startTimer)
-            setTimer(timer);
+        if (!startTimer) {
+            (isHardGame) ? setTimer(45) : setTimer(gameSettings.timer);
+        }
         if (timer > 0 && startTimer) {
             setTimeout(() => {
                 setTimer(timer - 1);
             }, 1000);
         }
-        if (timer === 0 && startTimer) {
-            setStartTimer(false);
-            newGame();
-        }
-    }, [timer, startTimer, newGame]);
 
-    useDidMountEffect(() => {
-        if (gameMode === 1) {
-            setIsHardGame(false);
-            setIsTimeGame(false);
-        }
-        if (gameMode === 2) {
-            setIsTimeGame(true);
-        }
-        if (gameMode === 3) {
-            setIsTimeGame(false);
-            setIsHardGame(true);
-        }
-    }, [gameMode]);
-
-
+    }, [timer, startTimer, gameSettings.timer, isHardGame]);
 
     const handleOpen = () => {
         setOpen(true);
@@ -268,31 +383,58 @@ export default function Game() {
         setOpen(false);
     };
 
-    const musicHandleChange = (event: any, newValue: number | number[]) => {
-        setMusicVolume(newValue as number);
-    };
-
-    const soundEffectsHandleChange = (event: any, newValue: number | number[]) => {
-        setSoundEffectsVolume(newValue as number);
+    const handleEndClose = () => {
+        setOpenEnd(false);
     };
 
     const handle = useFullScreenHandle();
 
     return (
         <div className={'game-container'}>
-            DI
-            <Button variant="contained" color="primary" onClick={handle.enter}>Fullscreen</Button>
-            <Button variant="contained" color="primary" onClick={handleOpen}>Settings</Button>
-            <Button variant="contained" color="primary" onClick={() => onStartClick()}>Best scores</Button>
+            <KeyboardEventHandler
+                handleKeys={['W', 'R', 'T', 'S', 'M']}
+                onKeyEvent={(key: string, e: React.KeyboardEvent) => {
+                    if (key === 'W') {
+                        (handle.active ? handle.exit() : handle.enter())
+                    }
+                    if (key === 'M') {
+                        setMuted(!muted);
+                    }
+                    if (key === 'S') {
+                        setOpen(true)
+                    }
+                    if (key === 'R') {
+                        setIsActiveGame(true);
+                    }
+                }} />
+            <div className={'control-buttons'}>
+                <Button variant="contained" color="primary" onClick={(e) => {
+                    handle.enter();
+                    e.currentTarget.blur();
+                }}>Fullscreen</Button>
+                <Button variant="contained" color="primary" onClick={
+                    (e) => {
+                        handleOpen();
+                        e.currentTarget.blur();
+                    }}>Settings</Button>
+                <Button variant="contained" color="primary" onClick={(e) => {
+                    e.currentTarget.blur();
+                    onStartClick();
+                }}>Best scores</Button>
+            </div>
             <FullScreen handle={handle}>
                 <GameScore
                     correct={guessedPairs}
                     wrong={wrongGuesses}
+                    attemts={attemts}
                     initialTime={timer}
                     isTimeGame={isTimeGame}
                     isHardGame={isHardGame}
                 ></GameScore>
-                <Button variant="contained" color="primary" onClick={() => onStartClick()}>New Game</Button>
+                <Button variant="contained" color="primary" onClick={(e) => {
+                    e.currentTarget.blur();
+                    onStartClick();
+                }}>New Game</Button>
                 <div className={'cards'}>
                     {cards.map(card =>
                         <Card
@@ -304,18 +446,44 @@ export default function Game() {
                     }
                 </div>
                 <Settings
-                    onChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setCardsCount((value) => value = Number(event.target.value))}
-                    count={cardsCount}
-                    gameMode={gameMode}
+                    onCountChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
+                        return { ...prevState, cardsCount: Number(event.target.value) }
+                    })}
+                    onModeChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
+                        return { ...prevState, gameMode: Number(event.target.value) }
+                    })}
+                    onTimerChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
+                        return { ...prevState, timer: Number(event.target.value) }
+                    })}
+                    onCardBackChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
+                        return { ...prevState, cardBack: event.target.value as string }
+                    })}
+                    musicHandleChange={(event: any, newValue: number | number[]) => setGameSettings(prevState => {
+                        return { ...prevState, musicVolume: newValue as number }
+                    })}
+                    soundEffectsHandleChange={(event: any, newValue: number | number[]) => setGameSettings(prevState => {
+                        return { ...prevState, effectsVolume: newValue as number }
+                    })}
+                    count={gameSettings.cardsCount}
+                    gameMode={gameSettings.gameMode}
+                    cardBack={gameSettings.cardBack}
+                    musicVolume={gameSettings.musicVolume}
+                    timer={gameSettings.timer}
+                    soundEffectsVolume={gameSettings.effectsVolume}
                     open={open}
                     isTimeGame={isTimeGame}
                     handleClose={handleClose}
-                    musicVolume={musicVolume}
-                    soundEffectsVolume={soundEffectsVolume}
-                    musicHandleChange={musicHandleChange}
-                    soundEffectsHandleChange={soundEffectsHandleChange}
-                    onModeChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameMode((value) => value = Number(event.target.value))}
+                    cardBacks={cardBacks}
+                    muted={muted}
+                    mutedEffects={mutedEffects}
+                    clickMuted={() => {
+                        setMuted(!muted)
+                    }}
+                    clickEffectsMuted={() => {
+                        setMutedEffects(!mutedEffects)
+                    }}
                 />
+                <GameEnd result={winState} open={openEnd} handleClose={handleEndClose}></GameEnd>
             </FullScreen>
         </div >
     )

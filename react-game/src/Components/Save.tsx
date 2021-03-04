@@ -9,6 +9,8 @@ export default interface Save {
     isTimeGame: boolean,
     wrongGuesses: number,
     guessedPairs: number,
+    attemts: number,
+    gameMode: number,
     cards: PlayingCard[],
     isGuess: boolean,
     isGameEnded: boolean,
@@ -16,4 +18,12 @@ export default interface Save {
     firstCardGuess: PlayingCard | null,
     secondCardGuess: PlayingCard | null,
     startTimer: boolean,
+    gameSettings: {
+        cardsCount: number,
+        musicVolume: number,
+        effectsVolume: number,
+        gameMode: number,
+        timer: number,
+        cardBack: string,
+    },
 }

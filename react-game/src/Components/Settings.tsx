@@ -5,6 +5,9 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
+import VolumeOffIcon from '@material-ui/icons/VolumeOff';
+import VolumeUpIcon from '@material-ui/icons/VolumeUp';
+import IconButton from '@material-ui/core/IconButton';
 import Modal from '@material-ui/core/Modal';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
@@ -12,6 +15,8 @@ import Divider from '@material-ui/core/Divider';
 import Slider from '@material-ui/core/Slider';
 import VolumeDown from '@material-ui/icons/VolumeDown';
 import VolumeUp from '@material-ui/icons/VolumeUp';
+import KeyboardEventHandler from 'react-keyboard-event-handler';
+import { nanoid } from 'nanoid';
 
 function getModalStyle() {
     const top = 5;
@@ -58,14 +63,50 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-export default function Settings({ count, gameMode, onChange, open, handleClose, onModeChange, musicHandleChange, soundEffectsHandleChange, isTimeGame, musicVolume, soundEffectsVolume }:
-    {
-        count: number, gameMode: number, onChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void, open: boolean,
-        handleClose: () => void, onModeChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
-        isTimeGame: boolean, musicVolume: number, soundEffectsVolume: number,
-        musicHandleChange: (event: any, newValue: number | number[]) => void,
-        soundEffectsHandleChange: (event: any, newValue: number | number[]) => void
-    }) {
+export default function Settings(
+    { count,
+        gameMode,
+        timer,
+        cardBack,
+        onCountChange,
+        open,
+        handleClose,
+        onModeChange,
+        onTimerChange,
+        onCardBackChange,
+        musicHandleChange,
+        soundEffectsHandleChange,
+        isTimeGame,
+        musicVolume,
+        soundEffectsVolume,
+        cardBacks,
+        muted,
+        mutedEffects,
+        clickMuted,
+        clickEffectsMuted,
+    }:
+        {
+            onCountChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
+            onModeChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
+            onTimerChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
+            onCardBackChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
+            musicHandleChange: (event: any, newValue: number | number[]) => void,
+            soundEffectsHandleChange: (event: any, newValue: number | number[]) => void,
+            open: boolean,
+            handleClose: () => void,
+            count: number,
+            gameMode: number,
+            cardBack: string,
+            musicVolume: number,
+            soundEffectsVolume: number,
+            isTimeGame: boolean,
+            timer: number,
+            cardBacks: string[],
+            muted: boolean,
+            mutedEffects: boolean,
+            clickMuted: () => void,
+            clickEffectsMuted: () => void,
+        }) {
     const classes = useStyles();
 
     const [modalStyle] = React.useState(getModalStyle);
@@ -82,27 +123,39 @@ export default function Settings({ count, gameMode, onChange, open, handleClose,
                 <Typography variant="h4" gutterBottom>
                     Volume
                     </Typography>
-                <Typography id="continuous-slider" gutterBottom>
-                    Music volume
+                <div className={'sub-settings-section'}>
+                    <Typography id="continuous-slider" gutterBottom>
+                        Music volume
                           </Typography>
-                <Slider
-                    onChange={musicHandleChange}
-                    value={musicVolume}
-                    aria-labelledby="continuous-slider"
-                    min={0}
-                    max={1}
-                    step={0.1}
-                />
-                <Typography id="continuous-slider" gutterBottom>
-                    Effects volume
+                    <Slider
+                        onChange={musicHandleChange}
+                        value={musicVolume}
+                        aria-labelledby="continuous-slider"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                    />
+                    <IconButton aria-label="off-sound" onClick={clickMuted}>
+                        {(muted ? <VolumeOffIcon /> : <VolumeUpIcon />)}
+                    </IconButton>
+                </div>
+                <div className={'sub-settings-section'}>
+
+
+                    <Typography id="continuous-slider" gutterBottom>
+                        Effects volume
                           </Typography>
-                <Slider
-                    onChange={soundEffectsHandleChange}
-                    value={soundEffectsVolume}
-                    aria-labelledby="continuous-slider"
-                    min={0}
-                    max={1}
-                    step={0.1} />
+                    <Slider
+                        onChange={soundEffectsHandleChange}
+                        value={soundEffectsVolume}
+                        aria-labelledby="continuous-slider"
+                        min={0}
+                        max={1}
+                        step={0.05} />
+                    <IconButton aria-label="off-sound" onClick={clickEffectsMuted}>
+                        {(mutedEffects ? <VolumeOffIcon /> : <VolumeUpIcon />)}
+                    </IconButton>
+                </div>
             </div>
             <Divider className={classes.divider} />
             <div className={'settings-section'} >
@@ -114,7 +167,7 @@ export default function Settings({ count, gameMode, onChange, open, handleClose,
                     <Select
                         native
                         value={count}
-                        onChange={onChange}
+                        onChange={onCountChange}
                         inputProps={{
                             name: 'cardPairs',
                             id: 'cards-pairs',
@@ -133,14 +186,14 @@ export default function Settings({ count, gameMode, onChange, open, handleClose,
                     Game Mode
                     </Typography>
                 <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="cards-pairs">Game mode</InputLabel>
+                    <InputLabel htmlFor="mode">Game mode</InputLabel>
                     <Select
                         native
                         value={gameMode}
                         onChange={onModeChange}
                         inputProps={{
-                            name: 'cardPairs',
-                            id: 'cards-pairs',
+                            name: 'mode',
+                            id: 'mode',
                         }}
                     >
                         <option value={1}>Normal Game</option>
@@ -149,15 +202,15 @@ export default function Settings({ count, gameMode, onChange, open, handleClose,
                     </Select>
 
                 </FormControl>
-                <FormControl className={(isTimeGame ? classes.formControl : classes.hidenForm)}>
-                    <InputLabel htmlFor="cards-pairs">Time</InputLabel>
+                <FormControl className={(gameMode === 2 ? classes.formControl : classes.hidenForm)}>
+                    <InputLabel htmlFor="timer">Time</InputLabel>
                     <Select
                         native
-                        value={gameMode}
-                        onChange={onModeChange}
+                        value={timer}
+                        onChange={onTimerChange}
                         inputProps={{
-                            name: 'cardPairs',
-                            id: 'cards-pairs',
+                            name: 'timer',
+                            id: 'timer',
                         }}
                     >
                         <option value={30}>30 seconds</option>
@@ -166,6 +219,56 @@ export default function Settings({ count, gameMode, onChange, open, handleClose,
                     </Select>
 
                 </FormControl>
+            </div>
+            <Divider className={classes.divider} />
+            <div className={'settings-section'}>
+                <Typography variant="h4" gutterBottom>
+                    Card Style
+                </Typography>
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="front">Front</InputLabel>
+                    <Select
+                        native
+                        value={gameMode}
+                        onChange={onModeChange}
+                        inputProps={{
+                            name: 'front',
+                            id: 'front',
+                        }}
+                    >
+                        <option value={1}>Classic Deck</option>
+                        <option value={2}>Cartoon Deck</option>
+                    </Select>
+
+                </FormControl>
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="back">Back</InputLabel>
+                    <Select
+                        value={cardBack}
+                        onChange={onCardBackChange}
+                        inputProps={{
+                            name: 'front',
+                            id: 'front',
+                        }}>
+                        {cardBacks.map((back) => (
+                            <MenuItem key={nanoid()} value={back}>
+                                {back}
+                            </MenuItem>
+                        ))}
+                    </Select>
+
+                </FormControl>
+            </div>
+            <Divider className={classes.divider} />
+            <div className={'settings-section'}>
+                <Typography variant="h4" gutterBottom>
+                    Hot Keys
+                </Typography>
+                <div className={'hot-keys-card'}> W - Enter Fullscreen</div>
+                <div className={'hot-keys-card'}> R - Start New game</div>
+                <div className={'hot-keys-card'}> S - Settings</div>
+                <div className={'hot-keys-card'}> M - Mute Music</div>
+                <div className={'hot-keys-card'}> T - Best Scores</div>
             </div>
         </div >
     );
