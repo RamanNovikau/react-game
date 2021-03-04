@@ -24,22 +24,26 @@ export function shuffleArray(array: any[] | PlayingCard[]) {
     return array.sort(() => .5 - Math.random());
 }
 
-export function createCards(count: number, back: string) {
-
-    const images = shuffleArray(CardsImagesCartoon);
+export function createCards(count: number, back: string, front: string) {
+    let src = `static/front/`;
+    let images = shuffleArray(CardsImages);
+    if (front === '2') {
+        images = shuffleArray(CardsImagesCartoon);
+        src = `static/front-cartoon/`;
+    }
     const cards = [];
 
     for (let i = 0; i < count; i += 1) {
         cards.push({
             id: nanoid(),
-            img: `static/front-cartoon/${images[i]}`,
+            img: `${src}${images[i]}`,
             back: back,
             isFlipped: false,
             isVisible: true,
         });
         cards.push({
             id: nanoid(),
-            img: `static/front-cartoon/${images[i]}`,
+            img: `${src}${images[i]}`,
             back: back,
             isFlipped: false,
             isVisible: true,
@@ -67,7 +71,7 @@ function createSave() {
         wrongGuesses: 0,
         guessedPairs: 0,
         attemts: 12,
-        cards: createCards(8, 'blue.png'),
+        cards: createCards(8, 'blue.png', '1'),
         isGuess: true,
         isGameEnded: true,
         isActiveGame: false,
@@ -81,6 +85,7 @@ function createSave() {
             gameMode: 1,
             timer: 90,
             cardBack: 'blue.png',
+            cardFront: '1',
         }
     };
     const sData = localStorage.getItem('game-save');
@@ -100,6 +105,7 @@ export default function Game() {
         gameMode: save.gameSettings.gameMode,
         timer: save.gameSettings.timer,
         cardBack: save.gameSettings.cardBack,
+        cardFront: save.gameSettings.cardFront,
     });
 
     const [cardsCount] = useState(save.cardsCount);
@@ -242,7 +248,7 @@ export default function Game() {
     const newGame = useCallback(() => {
         if (!gameMusic.playing())
             gameMusic.play();
-        setCards(createCards(gameSettings.cardsCount, gameSettings.cardBack));
+        setCards(createCards(gameSettings.cardsCount, gameSettings.cardBack, gameSettings.cardFront));
         setIsGuess(true);
         setGuessedPairs(0);
         setWrongGuesses(0);
@@ -260,7 +266,7 @@ export default function Game() {
             setIsHardGame(true);
             setAttemts(gameSettings.cardsCount + 4);
         }
-    }, [gameMusic, gameSettings.cardBack, gameSettings.cardsCount, gameSettings.gameMode]);
+    }, [gameMusic, gameSettings.cardBack, gameSettings.cardFront, gameSettings.cardsCount, gameSettings.gameMode]);
 
     useEffect(() => {
         if (guessedPairs === cards.length / 2) {
@@ -419,7 +425,7 @@ export default function Game() {
                     }}>Settings</Button>
                 <Button variant="contained" color="primary" onClick={(e) => {
                     e.currentTarget.blur();
-                    onStartClick();
+                   
                 }}>Best scores</Button>
             </div>
             <FullScreen handle={handle}>
@@ -458,6 +464,9 @@ export default function Game() {
                     onCardBackChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
                         return { ...prevState, cardBack: event.target.value as string }
                     })}
+                    onCardFrontChange={(event: React.ChangeEvent<{ name?: string; value: unknown }>) => setGameSettings(prevState => {
+                        return { ...prevState, cardFront: event.target.value as string }
+                    })}
                     musicHandleChange={(event: any, newValue: number | number[]) => setGameSettings(prevState => {
                         return { ...prevState, musicVolume: newValue as number }
                     })}
@@ -467,6 +476,7 @@ export default function Game() {
                     count={gameSettings.cardsCount}
                     gameMode={gameSettings.gameMode}
                     cardBack={gameSettings.cardBack}
+                    cardFront={gameSettings.cardFront}
                     musicVolume={gameSettings.musicVolume}
                     timer={gameSettings.timer}
                     soundEffectsVolume={gameSettings.effectsVolume}

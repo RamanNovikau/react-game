@@ -68,12 +68,14 @@ export default function Settings(
         gameMode,
         timer,
         cardBack,
+        cardFront,
         onCountChange,
         open,
         handleClose,
         onModeChange,
         onTimerChange,
         onCardBackChange,
+        onCardFrontChange,
         musicHandleChange,
         soundEffectsHandleChange,
         isTimeGame,
@@ -90,6 +92,7 @@ export default function Settings(
             onModeChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
             onTimerChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
             onCardBackChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
+            onCardFrontChange: (event: React.ChangeEvent<{ name?: string; value: unknown }>) => void,
             musicHandleChange: (event: any, newValue: number | number[]) => void,
             soundEffectsHandleChange: (event: any, newValue: number | number[]) => void,
             open: boolean,
@@ -97,6 +100,7 @@ export default function Settings(
             count: number,
             gameMode: number,
             cardBack: string,
+            cardFront: string,
             musicVolume: number,
             soundEffectsVolume: number,
             isTimeGame: boolean,
@@ -229,8 +233,8 @@ export default function Settings(
                     <InputLabel htmlFor="front">Front</InputLabel>
                     <Select
                         native
-                        value={gameMode}
-                        onChange={onModeChange}
+                        value={cardFront}
+                        onChange={onCardFrontChange}
                         inputProps={{
                             name: 'front',
                             id: 'front',

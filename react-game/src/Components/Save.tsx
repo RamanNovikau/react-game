@@ -25,5 +25,6 @@ export default interface Save {
         gameMode: number,
         timer: number,
         cardBack: string,
+        cardFront: string,
     },
 }
