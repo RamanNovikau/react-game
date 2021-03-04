@@ -1,6 +1,6 @@
 .cards {
   display: grid;
-  max-width: 80vw;
+  max-width: 85vw;
   align-items: center;
   justify-content: center;
   align-content: center;
@@ -8,16 +8,12 @@
   grid-gap: 10px;
   background: #b8e0ed;
   padding: 10px;
-  border:2px solid #22577d;
+  border: 2px solid #22577d;
   border-radius: 10px;
 }
-@media only screen and (max-width: 1024px) {
-  .cards {
-    grid-template-columns: repeat(auto-fit, minmax(90px, auto));
-  }
-}
+
 .card {
-  max-width: 150px;
+  max-width: 110px;
   min-height: 0;
   border-radius: 15px;
   background: transparent;
@@ -30,8 +26,9 @@
 }
 
 .card-inner {
-  border-radius: 15px;
-  background-color: #b8e0ed;
+  border-radius: 5px;
+  background-color: #d8d8d8;
+  border: 1px solid #050505;
   display: grid;
   transition: all 0.8s;
   transform-style: preserve-3d;
@@ -41,7 +38,11 @@
 .card-front,
 .card-back {
   width: 100%;
-  height: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   grid-area: 1 / 1;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -58,7 +59,7 @@
 }
 
 .card-inner:hover {
-  box-shadow: -1px 15px 30px -12px white;
+  box-shadow: -1px 15px 30px -12px rgb(197, 197, 197);
 }
 
 .card-inner:hover .word-card__img {
@@ -70,7 +71,7 @@
   transform: rotateY(180deg);
 }
 
-.card-invis{
+.card-invis {
   opacity: 0;
   cursor: none;
 }
@@ -99,4 +100,16 @@
 
 .card-overlay-show {
   display: flex;
+}
+
+@media only screen and (max-width: 1024px) {
+  .cards {
+    grid-template-columns: repeat(auto-fit, minmax(90px, auto));
+  }
+}
+
+@media only screen and (max-height: 900px) {
+  .card {
+    max-width: 75px;
+  }
 }
