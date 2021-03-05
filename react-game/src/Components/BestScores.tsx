@@ -6,7 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import { nanoid } from 'nanoid';
 
 function getModalStyle() {
-    const top = 35;
+    const top = 5;
 
     return {
         top: `${top}%`,
