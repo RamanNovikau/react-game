@@ -393,6 +393,8 @@ export default function Game() {
 
     function onCardClick(card: PlayingCard) {
         if (!isGuess) {
+            if (!gameMusic.playing())
+                gameMusic.play();
             soundEffects.play();
             setCardIsFlipped(card.id, true);
         }

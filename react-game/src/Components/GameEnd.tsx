@@ -101,7 +101,7 @@ export default function GameEnd
 
     const body = (
         <div style={modalStyle} className={classes.paper} >
-            {(!result ? <div className={classes.result}><h3>No scored results!</h3></div> : (result === true ?
+            {(result === null ? <div className={classes.result}><h3>No scored results!</h3></div> : (result === true ?
                 <div className={classes.result}>
                     <h3>You did it!</h3>
                     {(gameMode === 2 || gameMode === 3 ? <div>Time Left: {timer}s</div> : '')}

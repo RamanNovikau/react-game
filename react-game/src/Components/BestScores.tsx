@@ -4,7 +4,6 @@ import Modal from '@material-ui/core/Modal';
 
 import Typography from '@material-ui/core/Typography';
 import { nanoid } from 'nanoid';
-import { Divider } from '@material-ui/core';
 
 function getModalStyle() {
     const top = 35;
@@ -86,14 +85,8 @@ interface Score {
 }
 
 export default function BestScores
-    ({
-        open,
-        handleClose,
-    }:
-        {
-            open: boolean,
-            handleClose: () => void,
-        }) {
+    ({open,handleClose,
+    }:{open: boolean,handleClose: () => void,}) {
     const classes = useStyles();
 
     const [scores, setScores] = useState<Score[] | null>(null);
