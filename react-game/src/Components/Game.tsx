@@ -18,6 +18,7 @@ import { FullScreen, useFullScreenHandle } from "react-full-screen";
 import KeyboardEventHandler from 'react-keyboard-event-handler';
 import { Howl } from 'howler';
 import GameEnd from './GameEnd';
+import BestScores from './BestScores';
 
 
 export function shuffleArray(array: any[] | PlayingCard[]) {
@@ -108,6 +109,15 @@ export default function Game() {
         cardFront: save.gameSettings.cardFront,
     });
 
+    const [result, setResult] = useState({
+        wrongGuesses: 0,
+        cardsCount: 0,
+        timer: 0,
+        gameMode: 0,
+        attemts: 0,
+        saved: false,
+    });
+
     const [cardsCount] = useState(save.cardsCount);
     const [cards, setCards] = useState(save.cards);
 
@@ -140,7 +150,9 @@ export default function Game() {
 
     const [openEnd, setOpenEnd] = useState(false);
 
-    const [winState, setWinState] = useState(false);
+    const [openScores, setOpenScores] = useState(false);
+
+    const [winState, setWinState] = useState<boolean | null>(null);
 
     const [gameMusic] = useState(new Howl({
         src: ['static/audio/puzzle-sound-loop.mp3'],
@@ -270,17 +282,43 @@ export default function Game() {
 
     useEffect(() => {
         if (guessedPairs === cards.length / 2) {
+            setResult({
+                wrongGuesses: wrongGuesses,
+                cardsCount: cards.length,
+                timer: timer,
+                gameMode: gameSettings.gameMode,
+                attemts: attemts,
+                saved: false,
+            });
             setWinState(true);
             setStartTimer(false);
             setOpenEnd(true);
             newGame();
         }
         if (timer === 0 && startTimer) {
+            setResult({
+                wrongGuesses: wrongGuesses,
+                cardsCount: cards.length,
+                timer: timer,
+                gameMode: gameSettings.gameMode,
+                attemts: attemts,
+                saved: false,
+            });
+            setWinState(false);
             setStartTimer(false);
             setOpenEnd(true);
             newGame();
         }
         if (isHardGame && attemts === 0) {
+            setResult({
+                wrongGuesses: wrongGuesses,
+                cardsCount: cards.length,
+                timer: timer,
+                gameMode: gameSettings.gameMode,
+                attemts: attemts,
+                saved: false,
+            });
+            setWinState(false);
             setStartTimer(false);
             setOpenEnd(true);
             newGame();
@@ -343,7 +381,6 @@ export default function Game() {
                 }));
                 setIsGuess(false);
                 setIsGameEnded(false);
-                setWinState(false);
                 if (isTimeGame || isHardGame)
                     setStartTimer(true);
             }, revealTime);
@@ -393,12 +430,16 @@ export default function Game() {
         setOpenEnd(false);
     };
 
+    const handleScoresClose = () => {
+        setOpenScores(false);
+    };
+
     const handle = useFullScreenHandle();
 
     return (
         <div className={'game-container'}>
             <KeyboardEventHandler
-                handleKeys={['W', 'R', 'T', 'S', 'M']}
+                handleKeys={['W', 'R', 'T', 'S', 'M', 'Y']}
                 onKeyEvent={(key: string, e: React.KeyboardEvent) => {
                     if (key === 'W') {
                         (handle.active ? handle.exit() : handle.enter())
@@ -412,6 +453,12 @@ export default function Game() {
                     if (key === 'R') {
                         setIsActiveGame(true);
                     }
+                    if (key === 'T') {
+                        setOpenScores(true);
+                    }
+                    if (key === 'Y') {
+                        setOpenEnd(true);
+                    }
                 }} />
             <div className={'control-buttons'}>
                 <Button variant="contained" color="primary" onClick={(e) => {
@@ -424,9 +471,13 @@ export default function Game() {
                         e.currentTarget.blur();
                     }}>Settings</Button>
                 <Button variant="contained" color="primary" onClick={(e) => {
+                    setOpenScores(true);
                     e.currentTarget.blur();
-                   
                 }}>Best scores</Button>
+                <Button variant="contained" color="primary" onClick={(e) => {
+                    setOpenEnd(true);
+                    e.currentTarget.blur();
+                }}>Previous Result</Button>
             </div>
             <FullScreen handle={handle}>
                 <GameScore
@@ -493,7 +544,18 @@ export default function Game() {
                         setMutedEffects(!mutedEffects)
                     }}
                 />
-                <GameEnd result={winState} open={openEnd} handleClose={handleEndClose}></GameEnd>
+                <GameEnd
+                    result={winState}
+                    open={openEnd}
+                    handleClose={handleEndClose}
+                    {...result}
+                    changeSaved={() => setResult(prevState => {
+                        return { ...prevState, saved: true }
+                    })}
+                />
+                <BestScores
+                    open={openScores}
+                    handleClose={handleScoresClose}></BestScores>
             </FullScreen>
         </div >
     )

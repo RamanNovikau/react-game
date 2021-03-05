@@ -4,18 +4,13 @@ import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
-import Button from '@material-ui/core/Button';
 import VolumeOffIcon from '@material-ui/icons/VolumeOff';
 import VolumeUpIcon from '@material-ui/icons/VolumeUp';
 import IconButton from '@material-ui/core/IconButton';
 import Modal from '@material-ui/core/Modal';
-import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import Slider from '@material-ui/core/Slider';
-import VolumeDown from '@material-ui/icons/VolumeDown';
-import VolumeUp from '@material-ui/icons/VolumeUp';
-import KeyboardEventHandler from 'react-keyboard-event-handler';
 import { nanoid } from 'nanoid';
 
 function getModalStyle() {
@@ -273,6 +268,7 @@ export default function Settings(
                 <div className={'hot-keys-card'}> S - Settings</div>
                 <div className={'hot-keys-card'}> M - Mute Music</div>
                 <div className={'hot-keys-card'}> T - Best Scores</div>
+                <div className={'hot-keys-card'}> Y - Previous Result</div>
             </div>
         </div >
     );
